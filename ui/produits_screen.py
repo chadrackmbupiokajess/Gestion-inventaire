@@ -186,11 +186,6 @@ class ProduitsScreen(Screen):
         nom_input = TextInput(multiline=False, text=produit['nom'] if produit else '')
         form.add_widget(nom_input)
 
-        # Code
-        form.add_widget(Label(text='Code:'))
-        code_input = TextInput(multiline=False, text=produit['code'] if produit else '')
-        form.add_widget(code_input)
-
         # Prix d'achat
         form.add_widget(Label(text='Prix d\'achat:'))
         prix_achat_input = TextInput(multiline=False, input_filter='float', text=str(produit['prix_achat']) if produit else '')
@@ -241,7 +236,7 @@ class ProduitsScreen(Screen):
 
         annuler_btn.bind(on_press=popup.dismiss)
         sauvegarder_btn.bind(on_press=lambda x: self.save_produit(
-            popup, produit, nom_input.text, code_input.text,
+            popup, produit, nom_input.text,
             prix_achat_input.text, prix_vente_input.text,
             quantite_input.text, categorie_spinner.text,
             date_exp_input.text
@@ -249,12 +244,12 @@ class ProduitsScreen(Screen):
 
         popup.open()
 
-    def save_produit(self, popup, produit, nom, code, prix_achat, prix_vente, quantite, categorie, date_exp):
+    def save_produit(self, popup, produit, nom, prix_achat, prix_vente, quantite, categorie, date_exp):
         """Sauvegarder un produit"""
         try:
             # Validation
-            if not nom or not code:
-                self.show_message('Erreur', 'Le nom et le code sont obligatoires')
+            if not nom:
+                self.show_message('Erreur', 'Le nom est obligatoire')
                 return
 
             prix_achat = float(prix_achat) if prix_achat else 0.0
@@ -274,11 +269,11 @@ class ProduitsScreen(Screen):
             # Sauvegarder
             if produit:
                 # Modification
-                Produit.modifier(produit['id'], nom, code, prix_achat, prix_vente, quantite, categorie_id, date_expiration)
+                Produit.modifier(produit['id'], nom, produit['code'], prix_achat, prix_vente, quantite, categorie_id, date_expiration)
                 self.show_message('Succès', 'Produit modifié avec succès')
             else:
                 # Création
-                Produit.creer(nom, code, prix_achat, prix_vente, quantite, categorie_id, date_expiration)
+                Produit.creer(nom, prix_achat, prix_vente, quantite, categorie_id, date_expiration)
                 self.show_message('Succès', 'Produit ajouté avec succès')
 
             popup.dismiss()

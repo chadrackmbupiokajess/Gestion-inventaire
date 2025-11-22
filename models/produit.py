@@ -2,6 +2,7 @@
 Modèle Produit
 """
 from datetime import datetime
+import time
 from database.db_manager import db
 
 
@@ -9,13 +10,22 @@ class Produit:
     """Classe pour gérer les produits"""
 
     @staticmethod
-    def creer(nom, code, prix_achat, prix_vente, quantite, categorie_id=None, date_expiration=None):
+    def _generer_code_unique(nom):
         """
-        Créer un nouveau produit
+        Générer un code unique pour un produit.
+        Prend les 3 premières lettres du nom et y ajoute un horodatage.
+        """
+        prefix = nom[:3].upper()
+        timestamp = str(int(time.time() * 100))[-6:]
+        return f"{prefix}-{timestamp}"
+
+    @staticmethod
+    def creer(nom, prix_achat, prix_vente, quantite, categorie_id=None, date_expiration=None):
+        """
+        Créer un nouveau produit avec un code généré automatiquement.
 
         Args:
             nom (str): Nom du produit
-            code (str): Code unique du produit
             prix_achat (float): Prix d'achat
             prix_vente (float): Prix de vente
             quantite (int): Quantité en stock
@@ -25,6 +35,7 @@ class Produit:
         Returns:
             int: ID du nouveau produit
         """
+        code = Produit._generer_code_unique(nom)
         query = """
             INSERT INTO produits (nom, code, prix_achat, prix_vente, quantite,
                                  categorie_id, date_expiration, date_creation)
@@ -36,12 +47,12 @@ class Produit:
     @staticmethod
     def modifier(produit_id, nom, code, prix_achat, prix_vente, quantite, categorie_id=None, date_expiration=None):
         """
-        Modifier un produit
+        Modifier un produit. Le code n'est pas modifié.
 
         Args:
             produit_id (int): ID du produit
             nom (str): Nom du produit
-            code (str): Code unique du produit
+            code (str): Code unique du produit (non modifiable ici)
             prix_achat (float): Prix d'achat
             prix_vente (float): Prix de vente
             quantite (int): Quantité en stock
@@ -53,11 +64,11 @@ class Produit:
         """
         query = """
             UPDATE produits
-            SET nom = ?, code = ?, prix_achat = ?, prix_vente = ?,
+            SET nom = ?, prix_achat = ?, prix_vente = ?,
                 quantite = ?, categorie_id = ?, date_expiration = ?
             WHERE id = ?
         """
-        return db.execute_query(query, (nom, code, prix_achat, prix_vente, quantite,
+        return db.execute_query(query, (nom, prix_achat, prix_vente, quantite,
                                         categorie_id, date_expiration, produit_id))
 
     @staticmethod
