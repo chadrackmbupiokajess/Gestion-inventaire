@@ -263,20 +263,28 @@ class VentesScreen(Screen):
         form.add_widget(total_ligne_label)
 
         form_section.add_widget(form)
+        popup_content_layout.add_widget(form_section)
 
-        # Bouton pour ajouter au panier
+        # Boutons d'action regroupés
+        buttons_layout = BoxLayout(size_hint=(1, None), height=dp(50), spacing=dp(10))
+
+        annuler_btn = Button(text='Annuler', background_color=(0.4, 0.4, 0.45, 1), color=(1, 1, 1, 1))
+        buttons_layout.add_widget(annuler_btn)
+
         ajouter_panier_btn = Button(
             text='➕ Ajouter au panier',
-            size_hint=(1, None),
-            height=dp(45),
             background_color=(0.2, 0.8, 0.4, 1),
             color=(1, 1, 1, 1),
             font_size='16sp',
             bold=True
         )
-        form_section.add_widget(ajouter_panier_btn)
+        buttons_layout.add_widget(ajouter_panier_btn)
 
-        popup_content_layout.add_widget(form_section)
+        valider_btn = Button(text='✓ Valider la vente', background_color=(0.2, 0.8, 0.4, 1), color=(1, 1, 1, 1), font_size='16sp', bold=True)
+        buttons_layout.add_widget(valider_btn)
+
+        popup_content_layout.add_widget(buttons_layout)
+
 
         # Séparateur
         popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
@@ -458,17 +466,6 @@ class VentesScreen(Screen):
         quantite_input.bind(text=update_total_ligne)
         prix_input.bind(text=update_total_ligne)
         ajouter_panier_btn.bind(on_press=ajouter_au_panier)
-
-        # Boutons
-        buttons_layout = BoxLayout(size_hint=(1, None), height=dp(50), spacing=dp(10))
-
-        annuler_btn = Button(text='Annuler', background_color=(0.4, 0.4, 0.45, 1), color=(1, 1, 1, 1))
-        buttons_layout.add_widget(annuler_btn)
-
-        valider_btn = Button(text='✓ Valider la vente', background_color=(0.2, 0.8, 0.4, 1), color=(1, 1, 1, 1), font_size='16sp', bold=True)
-        buttons_layout.add_widget(valider_btn)
-
-        popup_content_layout.add_widget(buttons_layout)
 
         # Créer un ScrollView et y ajouter le layout principal
         root_scroll = ScrollView(size_hint=(1, 1))
