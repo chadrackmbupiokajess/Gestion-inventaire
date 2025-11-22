@@ -7,6 +7,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from kivy.metrics import dp
+from kivy.core.window import Window
 from kivymd.uix.label import MDLabel
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.button import MDRaisedButton, MDIconButton, MDFlatButton
@@ -261,6 +262,7 @@ class VentesScreen(Screen):
             self.search_results_layout.clear_widgets()
             self.produit_search_input.text = ""
             update_total_ligne(None, None)
+            quantite_input.focus = True
 
         def update_total_ligne(instance, value):
             try:
@@ -313,6 +315,13 @@ class VentesScreen(Screen):
                 self.panier.pop(index)
                 update_panier_display()
 
+        def on_key(window, key, *args):
+            if key == 13:  # 13 is the keycode for Enter
+                if self.produit_search_input.focus:
+                    return False # Let the event propagate
+                ajouter_au_panier(None)
+                return True
+
         self.produit_search_input.bind(text=search_produits)
         self.produit_search_input.bind(on_text_validate=on_search_text_validate)
         quantite_input.bind(text=update_total_ligne)
@@ -322,6 +331,16 @@ class VentesScreen(Screen):
         # --- Popup ---
         popup = Popup(title='Nouvelle Vente', content=ScrollView(size_hint=(1, 1), do_scroll_x=False, do_scroll_y=True, bar_width=dp(10)), size_hint=(0.9, 0.9), auto_dismiss=False)
         popup.content.add_widget(popup_main_layout)
+        
+        def on_popup_open(instance):
+            Window.bind(on_key_down=on_key)
+
+        def on_popup_dismiss(instance):
+            Window.unbind(on_key_down=on_key)
+
+        popup.bind(on_open=on_popup_open)
+        popup.bind(on_dismiss=on_popup_dismiss)
+        
         annuler_btn.bind(on_press=popup.dismiss)
         valider_btn.bind(on_press=lambda x: self.valider_panier(popup))
         popup.open()
