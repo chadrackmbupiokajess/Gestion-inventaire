@@ -4,13 +4,14 @@
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
-from kivy.uix.spinner import Spinner
 from kivy.metrics import dp
+from kivymd.uix.label import MDLabel
+from kivymd.uix.textfield import MDTextField
+from kivymd.uix.button import MDRaisedButton, MDIconButton, MDFlatButton
+from kivymd.uix.card import MDCard
+from kivymd.app import MDApp
 from models.produit import Produit
 from models.vente import Vente
 from utils.export import ExportManager
@@ -35,14 +36,14 @@ class VentesScreen(Screen):
         # Barre supérieure
         top_bar = BoxLayout(size_hint=(1, None), height=dp(50), spacing=dp(10))
 
-        titre = Label(text='Gestion des Ventes', font_size='20sp', bold=True, size_hint=(0.5, 1), color=(1, 1, 1, 1))
+        titre = MDLabel(text='Gestion des Ventes', font_style='H5', bold=True, size_hint=(0.5, 1))
         top_bar.add_widget(titre)
 
-        retour_btn = Button(text='Retour', size_hint=(0.25, 1), background_color=(0.4, 0.4, 0.45, 1), color=(1, 1, 1, 1))
+        retour_btn = MDRaisedButton(text='Retour', size_hint=(0.25, 1))
         retour_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'dashboard'))
         top_bar.add_widget(retour_btn)
 
-        nouvelle_vente_btn = Button(text='Nouvelle Vente', size_hint=(0.25, 1), background_color=(0.2, 0.8, 0.4, 1), color=(1, 1, 1, 1))
+        nouvelle_vente_btn = MDRaisedButton(text='Nouvelle Vente', size_hint=(0.25, 1), md_bg_color=(0.2, 0.8, 0.4, 1))
         nouvelle_vente_btn.bind(on_press=self.show_nouvelle_vente_popup)
         top_bar.add_widget(nouvelle_vente_btn)
 
@@ -51,18 +52,18 @@ class VentesScreen(Screen):
         # Statistiques du jour
         stats_layout = BoxLayout(size_hint=(1, None), height=dp(40), spacing=dp(10))
 
-        self.total_jour_label = Label(
+        self.total_jour_label = MDLabel(
             text='Total du jour: 0.00',
-            font_size='16sp',
+            font_style='H6',
             bold=True,
-            color=(0.4, 1, 0.6, 1)
+            theme_text_color="Custom",
+            text_color=(0.4, 1, 0.6, 1)
         )
         stats_layout.add_widget(self.total_jour_label)
 
-        self.nb_ventes_label = Label(
+        self.nb_ventes_label = MDLabel(
             text='Nombre de ventes: 0',
-            font_size='16sp',
-            color=(0.9, 0.9, 0.9, 1)
+            font_style='H6'
         )
         stats_layout.add_widget(self.nb_ventes_label)
 
@@ -105,7 +106,8 @@ class VentesScreen(Screen):
 
     def create_vente_item(self, vente):
         """Créer un widget pour une vente"""
-        layout = BoxLayout(size_hint_y=None, height=dp(70), spacing=dp(5), padding=dp(5))
+        card = MDCard(size_hint_y=None, height=dp(70), padding=dp(5))
+        layout = BoxLayout(spacing=dp(5))
 
         # Informations de la vente
         info_layout = BoxLayout(orientation='vertical', size_hint=(0.8, 1))
@@ -113,423 +115,234 @@ class VentesScreen(Screen):
         dt = datetime.fromisoformat(vente['date'])
         heure = dt.strftime("%H:%M:%S")
 
-        produit_label = Label(
+        produit_label = MDLabel(
             text=f"{vente['produit_nom']} ({vente['produit_code']}) - {heure}",
-            font_size='16sp',
+            font_style='Subtitle1',
             bold=True,
-            halign='left',
-            valign='middle',
-            color=(1, 1, 1, 1)
         )
-        produit_label.bind(size=produit_label.setter('text_size'))
         info_layout.add_widget(produit_label)
 
-        details_label = Label(
+        details_label = MDLabel(
             text=f"Qté: {vente['quantite']} x {vente['prix_unitaire']:.2f} = {vente['montant_total']:.2f} | Vendeur: {vente['utilisateur_nom']}",
-            font_size='14sp',
-            halign='left',
-            valign='middle',
-            color=(0.8, 0.8, 0.8, 1)
+            font_style='Body2',
+            theme_text_color="Secondary"
         )
-        details_label.bind(size=details_label.setter('text_size'))
         info_layout.add_widget(details_label)
 
         layout.add_widget(info_layout)
 
         # Bouton d'export du ticket
-        ticket_btn = Button(
-            text='Ticket',
-            size_hint=(0.2, 1),
-            background_color=(0.2, 0.5, 0.9, 1),
-            color=(1, 1, 1, 1)
-        )
-        ticket_btn.bind(on_press=lambda x: self.export_ticket(vente['id']))
+        ticket_btn = MDIconButton(icon='receipt', on_press=lambda x: self.export_ticket(vente['id']))
         layout.add_widget(ticket_btn)
+        card.add_widget(layout)
 
-        return layout
+        return card
 
     def show_nouvelle_vente_popup(self, instance):
         """Afficher le popup de nouvelle vente avec panier"""
-        self.panier = []  # Réinitialiser le panier
+        self.panier = []
 
-        # Layout principal qui contiendra tout le contenu du popup
-        popup_content_layout = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(5), size_hint_y=None)
-        popup_content_layout.bind(minimum_height=popup_content_layout.setter('height'))
+        # --- Layout principal du Popup ---
+        popup_main_layout = BoxLayout(orientation='vertical', padding=dp(15), spacing=dp(15), size_hint_y=None)
+        popup_main_layout.bind(minimum_height=popup_main_layout.setter('height'))
 
-        # Total du panier en haut
-        total_panier_layout = BoxLayout(size_hint=(1, None), height=dp(35), spacing=dp(10))
-        total_panier_layout.add_widget(Label(
-            text='TOTAL PANIER:',
-            font_size='18sp',
-            bold=True,
-            color=(1, 1, 1, 1)
-        ))
-        self.total_panier_label = Label(
-            text='0.00',
-            font_size='20sp',
-            bold=True,
-            color=(0.4, 1, 0.6, 1)
-        )
-        total_panier_layout.add_widget(self.total_panier_label)
-        popup_content_layout.add_widget(total_panier_layout)
+        # --- Card pour l'ajout de produit ---
+        add_product_card = MDCard(orientation='vertical', padding=dp(15), spacing=dp(10), size_hint_y=None)
+        add_product_card.bind(minimum_height=add_product_card.setter('height'))
 
-        # Séparateur
-        popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
+        add_product_card.add_widget(MDLabel(text="Ajouter un Produit", font_style="H6", adaptive_height=True))
 
-
-        # === SECTION 1: FORMULAIRE DE SAISIE ===
-        form_section = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(5))
-        form_section.bind(minimum_height=form_section.setter('height'))
-
-        # Barre de titre avec compteur de panier
-        titre_bar = BoxLayout(size_hint=(1, None), height=dp(30))
+        self.produit_search_input = MDTextField(hint_text='Rechercher produit (nom ou code)', mode="fill")
+        add_product_card.add_widget(self.produit_search_input)
         
-        form_titre = Label(
-            text='📝 Ajouter un produit',
-            size_hint=(0.6, 1),
-            font_size='16sp',
-            bold=True,
-            color=(0.4, 0.8, 1, 1),
-            halign='left'
-        )
-        form_titre.bind(size=form_titre.setter('text_size'))
-        titre_bar.add_widget(form_titre)
-
-        panier_label = Label(
-            text='🛒 Panier (0 articles)',
-            size_hint=(0.4, 1),
-            font_size='16sp',
-            bold=True,
-            color=(0.4, 1, 0.6, 1),
-            halign='right'
-        )
-        panier_label.bind(size=panier_label.setter('text_size'))
-        titre_bar.add_widget(panier_label)
-        
-        form_section.add_widget(titre_bar)
-
-        # Formulaire d'ajout de produit
-        form = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(200))
-
-        # Recherche du produit
-        form.add_widget(Label(text='Rechercher produit:', color=(1, 1, 1, 1)))
-        self.produit_search_input = TextInput(
-            multiline=False,
-            hint_text='Tapez le nom ou code...',
-            background_color=(0.25, 0.25, 0.28, 1),
-            foreground_color=(1, 1, 1, 1),
-            cursor_color=(0.3, 0.7, 1, 1)
-        )
-        form.add_widget(self.produit_search_input)
-
-        # Produit sélectionné
-        form.add_widget(Label(text='Produit sélectionné:', color=(1, 1, 1, 1)))
-        self.produit_selected_label = Label(
-            text='Aucun produit sélectionné',
-            color=(1, 0.6, 0.3, 1),
-            halign='left',
-            valign='middle'
-        )
-        self.produit_selected_label.bind(size=self.produit_selected_label.setter('text_size'))
-        form.add_widget(self.produit_selected_label)
-
-        # Quantité
-        form.add_widget(Label(text='Quantité:', color=(1, 1, 1, 1)))
-        quantite_input = TextInput(
-            multiline=False,
-            input_filter='int',
-            text='1',
-            background_color=(0.25, 0.25, 0.28, 1),
-            foreground_color=(1, 1, 1, 1),
-            cursor_color=(0.3, 0.7, 1, 1)
-        )
-        form.add_widget(quantite_input)
-
-        # Prix unitaire
-        form.add_widget(Label(text='Prix unitaire:', color=(1, 1, 1, 1)))
-        prix_input = TextInput(
-            multiline=False,
-            input_filter='float',
-            text='0.00',
-            background_color=(0.25, 0.25, 0.28, 1),
-            foreground_color=(1, 1, 1, 1),
-            cursor_color=(0.3, 0.7, 1, 1)
-        )
-        form.add_widget(prix_input)
-
-        # Total de la ligne
-        form.add_widget(Label(text='Total ligne:', color=(1, 1, 1, 1)))
-        total_ligne_label = Label(text='0.00', font_size='18sp', bold=True, color=(0.4, 1, 0.6, 1))
-        form.add_widget(total_ligne_label)
-
-        form_section.add_widget(form)
-        popup_content_layout.add_widget(form_section)
-
-        # Boutons d'action regroupés
-        buttons_layout = BoxLayout(size_hint=(1, None), height=dp(50), spacing=dp(10))
-
-        annuler_btn = Button(text='Annuler', background_color=(0.4, 0.4, 0.45, 1), color=(1, 1, 1, 1))
-        buttons_layout.add_widget(annuler_btn)
-
-        ajouter_panier_btn = Button(
-            text='➕ Ajouter au panier',
-            background_color=(0.2, 0.8, 0.4, 1),
-            color=(1, 1, 1, 1),
-            font_size='16sp',
-            bold=True
-        )
-        buttons_layout.add_widget(ajouter_panier_btn)
-
-        valider_btn = Button(text='✓ Valider la vente', background_color=(0.2, 0.8, 0.4, 1), color=(1, 1, 1, 1), font_size='16sp', bold=True)
-        buttons_layout.add_widget(valider_btn)
-
-        popup_content_layout.add_widget(buttons_layout)
-
-
-        # Séparateur
-        popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
-
-        # === SECTION 2: RÉSULTATS DE RECHERCHE ===
-        search_results_label = Label(
-            text='🔍 Résultats de recherche:',
-            size_hint=(1, None),
-            height=dp(25),
-            color=(0.9, 0.9, 0.9, 1),
-            font_size='14sp'
-        )
-        popup_content_layout.add_widget(search_results_label)
-
-        # ScrollView pour les résultats
         self.search_results_layout = GridLayout(cols=1, spacing=dp(2), size_hint_y=None)
         self.search_results_layout.bind(minimum_height=self.search_results_layout.setter('height'))
+        add_product_card.add_widget(self.search_results_layout)
 
-        search_scroll = ScrollView(size_hint=(1, None), height=dp(120))
-        search_scroll.add_widget(self.search_results_layout)
-        popup_content_layout.add_widget(search_scroll)
+        self.produit_selected_label = MDLabel(text='Aucun produit sélectionné', theme_text_color="Hint", adaptive_height=True)
+        add_product_card.add_widget(self.produit_selected_label)
 
-        # Séparateur
-        popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
+        # Layout pour Quantité et Prix
+        inputs_layout = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(60))
+        quantite_input = MDTextField(hint_text='Quantité', input_filter='int', text='1')
+        prix_input = MDTextField(hint_text='Prix unitaire', input_filter='float', text='0.00')
+        inputs_layout.add_widget(quantite_input)
+        inputs_layout.add_widget(prix_input)
+        add_product_card.add_widget(inputs_layout)
 
-        # === SECTION 3: PANIER ===
-        # Le titre du panier est maintenant en haut, on peut garder cette section pour la liste
-        self.panier_layout = GridLayout(cols=1, spacing=dp(2), size_hint_y=None)
+        total_ligne_label = MDLabel(text='Total ligne: 0.00', font_style='Subtitle1', bold=True, theme_text_color="Primary", adaptive_height=True)
+        add_product_card.add_widget(total_ligne_label)
+
+        separator = BoxLayout(size_hint_y=None, height=dp(1))
+        try:
+            separator.md_bg_color = MDApp.get_running_app().theme_cls.divider_color
+        except AttributeError: # Pour compatibilité avec anciennes versions de KivyMD
+            from kivy.graphics import Color, Rectangle
+            with separator.canvas.before:
+                Color(rgba=MDApp.get_running_app().theme_cls.divider_color)
+                Rectangle(pos=separator.pos, size=separator.size)
+
+        add_product_card.add_widget(separator)
+
+
+        ajouter_panier_btn = MDRaisedButton(text='Ajouter au panier', icon='plus', md_bg_color=(0.2, 0.8, 0.4, 1), size_hint_x=1)
+        add_product_card.add_widget(ajouter_panier_btn)
+
+        popup_main_layout.add_widget(add_product_card)
+
+        # --- Card pour le Panier ---
+        panier_card = MDCard(orientation='vertical', padding=dp(15), spacing=dp(10), size_hint_y=None)
+        panier_card.bind(minimum_height=panier_card.setter('height'))
+
+        panier_header = BoxLayout(size_hint_y=None, height=dp(30))
+        panier_label = MDLabel(text="Panier", font_style="H6")
+        self.panier_count_label = MDLabel(text="(0 articles)", halign="right", theme_text_color="Secondary")
+        panier_header.add_widget(panier_label)
+        panier_header.add_widget(self.panier_count_label)
+        panier_card.add_widget(panier_header)
+
+        self.panier_layout = GridLayout(cols=1, spacing=dp(5), size_hint_y=None)
         self.panier_layout.bind(minimum_height=self.panier_layout.setter('height'))
+        panier_card.add_widget(self.panier_layout)
 
-        panier_scroll = ScrollView(size_hint=(1, None), height=dp(120))
-        panier_scroll.add_widget(self.panier_layout)
-        popup_content_layout.add_widget(panier_scroll)
+        separator2 = BoxLayout(size_hint_y=None, height=dp(1))
+        try:
+            separator2.md_bg_color = MDApp.get_running_app().theme_cls.divider_color
+        except AttributeError:
+            from kivy.graphics import Color, Rectangle
+            with separator2.canvas.before:
+                Color(rgba=MDApp.get_running_app().theme_cls.divider_color)
+                Rectangle(pos=separator2.pos, size=separator2.size)
+        panier_card.add_widget(separator2)
 
-        # Variable pour stocker le produit sélectionné
+        total_panier_layout = BoxLayout(size_hint_y=None, height=dp(35))
+        total_panier_layout.add_widget(MDLabel(text='TOTAL PANIER:', font_style='H6', bold=True))
+        self.total_panier_label = MDLabel(text='0.00', font_style='H5', bold=True, halign="right", theme_text_color="Custom", text_color=(0.4, 1, 0.6, 1))
+        total_panier_layout.add_widget(self.total_panier_label)
+        panier_card.add_widget(total_panier_layout)
+
+        popup_main_layout.add_widget(panier_card)
+
+        # --- Boutons d'action finaux ---
+        final_buttons_layout = BoxLayout(size_hint=(1, None), height=dp(50), spacing=dp(10))
+        annuler_btn = MDFlatButton(text='Annuler')
+        valider_btn = MDRaisedButton(text='Valider la vente', icon='check-circle', md_bg_color=(0.2, 0.8, 0.4, 1))
+        final_buttons_layout.add_widget(annuler_btn)
+        final_buttons_layout.add_widget(valider_btn)
+        popup_main_layout.add_widget(final_buttons_layout)
+
+        # --- Logique ---
         self.selected_produit = None
+        self.search_results = []
 
-        # Fonction pour rechercher les produits
+        def on_search_text_validate(instance):
+            if self.search_results:
+                select_produit(self.search_results[0])
+            elif not instance.text:
+                ajouter_au_panier(None)
+
         def search_produits(instance, value):
             self.search_results_layout.clear_widgets()
-            self.selected_produit = None
-            self.produit_selected_label.text = 'Aucun produit sélectionné'
-            self.produit_selected_label.color = (1, 0.6, 0.3, 1)
-            prix_input.text = '0.00'
-
-            if len(value) < 2:
-                return
-
-            # Rechercher les produits correspondants
-            results = [p for p in self.produits if
-                      value.lower() in p['nom'].lower() or
-                      value.lower() in p['code'].lower()]
-
-            if not results:
-                self.search_results_layout.add_widget(Label(
-                    text='Aucun produit trouvé',
-                    size_hint_y=None,
-                    height=dp(30),
-                    color=(0.7, 0.7, 0.7, 1)
-                ))
+            self.search_results = []
+            if len(value) < 2: return
+            self.search_results = [p for p in self.produits if value.lower() in p['nom'].lower() or value.lower() in p['code'].lower()]
+            if not self.search_results:
+                self.search_results_layout.add_widget(MDLabel(text='Aucun produit trouvé', halign='center', theme_text_color="Secondary"))
             else:
-                for p in results[:10]:  # Limiter à 10 résultats
-                    # Afficher la catégorie ou "Non catégorisé"
-                    categorie_text = p['categorie_nom'] if p['categorie_nom'] else 'Non catégorisé'
-                    result_btn = Button(
-                        text=f"{p['nom']} ({p['code']}) - {categorie_text} - Stock: {p['quantite']} - Prix: {p['prix_vente']:.2f}",
-                        size_hint_y=None,
-                        height=dp(40),
-                        background_color=(0.25, 0.25, 0.28, 1),
-                        color=(1, 1, 1, 1)
-                    )
-                    result_btn.bind(on_press=lambda x, prod=p: select_produit(prod))
-                    self.search_results_layout.add_widget(result_btn)
+                for p in self.search_results[:10]:
+                    btn = MDRaisedButton(text=f"{p['nom']} ({p['code']}) - Stock: {p['quantite']}", on_press=lambda x, prod=p: select_produit(prod))
+                    self.search_results_layout.add_widget(btn)
 
         def select_produit(produit):
             self.selected_produit = produit
             self.produit_selected_label.text = f"{produit['nom']} ({produit['code']})"
-            self.produit_selected_label.color = (0.4, 1, 0.6, 1)
+            self.produit_selected_label.theme_text_color = "Primary"
             prix_input.text = str(produit['prix_vente'])
             self.search_results_layout.clear_widgets()
+            self.produit_search_input.text = ""
             update_total_ligne(None, None)
 
         def update_total_ligne(instance, value):
             try:
                 qte = int(quantite_input.text) if quantite_input.text else 0
                 prix = float(prix_input.text) if prix_input.text else 0.0
-                total_ligne_label.text = f"{qte * prix:.2f}"
+                total_ligne_label.text = f"Total ligne: {qte * prix:.2f}"
             except:
-                total_ligne_label.text = "0.00"
+                total_ligne_label.text = "Total ligne: 0.00"
 
         def ajouter_au_panier(instance):
-            """Ajouter le produit au panier"""
             if not self.selected_produit:
                 self.show_message('Erreur', 'Veuillez sélectionner un produit')
                 return
-
             try:
-                quantite = int(quantite_input.text) if quantite_input.text else 0
-                prix_unitaire = float(prix_input.text) if prix_input.text else 0.0
-
-                if quantite <= 0:
-                    self.show_message('Erreur', 'La quantité doit être supérieure à 0')
+                quantite = int(quantite_input.text)
+                prix_unitaire = float(prix_input.text)
+                if quantite <= 0 or prix_unitaire <= 0:
+                    self.show_message('Erreur', 'La quantité et le prix doivent être supérieurs à 0')
                     return
-
-                if prix_unitaire <= 0:
-                    self.show_message('Erreur', 'Le prix doit être supérieur à 0')
-                    return
-
-                # Vérifier le stock
                 if self.selected_produit['quantite'] < quantite:
                     self.show_message('Erreur', f"Stock insuffisant. Disponible: {self.selected_produit['quantite']}")
                     return
-
-                # Ajouter au panier
-                self.panier.append({
-                    'produit': self.selected_produit,
-                    'quantite': quantite,
-                    'prix_unitaire': prix_unitaire,
-                    'total': quantite * prix_unitaire
-                })
-
-                # Réinitialiser le formulaire
+                self.panier.append({'produit': self.selected_produit, 'quantite': quantite, 'prix_unitaire': prix_unitaire, 'total': quantite * prix_unitaire})
                 self.produit_search_input.text = ''
                 quantite_input.text = '1'
                 prix_input.text = '0.00'
                 self.selected_produit = None
                 self.produit_selected_label.text = 'Aucun produit sélectionné'
-                self.produit_selected_label.color = (1, 0.6, 0.3, 1)
-
-                # Mettre à jour l'affichage du panier
+                self.produit_selected_label.theme_text_color = "Hint"
                 update_panier_display()
-
             except Exception as e:
                 self.show_message('Erreur', f'Erreur: {str(e)}')
 
         def update_panier_display():
-            """Mettre à jour l'affichage du panier"""
             self.panier_layout.clear_widgets()
-            panier_label.text = f'🛒 Panier ({len(self.panier)} articles)'
-
+            self.panier_count_label.text = f'({len(self.panier)} articles)'
             total_panier = 0
             for idx, item in enumerate(self.panier):
-                item_layout = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(5))
-
-                # Info produit avec catégorie
-                categorie_text = item['produit']['categorie_nom'] if item['produit']['categorie_nom'] else 'Non catégorisé'
-                info_label = Label(
-                    text=f"{item['produit']['nom']} ({categorie_text}) - Qté: {item['quantite']} x {item['prix_unitaire']:.2f} = {item['total']:.2f}",
-                    size_hint=(0.8, 1),
-                    color=(1, 1, 1, 1),
-                    halign='left',
-                    valign='middle'
-                )
-                info_label.bind(size=info_label.setter('text_size'))
+                item_layout = BoxLayout(size_hint_y=None, height=dp(40))
+                info_label = MDLabel(text=f"{item['produit']['nom']} - Qté: {item['quantite']} x {item['prix_unitaire']:.2f} = {item['total']:.2f}", adaptive_height=True)
+                del_btn = MDIconButton(icon='delete', theme_text_color="Error", on_press=lambda x, i=idx: supprimer_du_panier(i))
                 item_layout.add_widget(info_label)
-
-                # Bouton supprimer
-                del_btn = Button(
-                    text='❌',
-                    size_hint=(0.2, 1),
-                    background_color=(0.9, 0.3, 0.3, 1),
-                    color=(1, 1, 1, 1)
-                )
-                del_btn.bind(on_press=lambda x, i=idx: supprimer_du_panier(i))
                 item_layout.add_widget(del_btn)
-
                 self.panier_layout.add_widget(item_layout)
                 total_panier += item['total']
-
             self.total_panier_label.text = f"{total_panier:.2f}"
 
         def supprimer_du_panier(index):
-            """Supprimer un article du panier"""
             if 0 <= index < len(self.panier):
                 self.panier.pop(index)
                 update_panier_display()
 
         self.produit_search_input.bind(text=search_produits)
+        self.produit_search_input.bind(on_text_validate=on_search_text_validate)
         quantite_input.bind(text=update_total_ligne)
         prix_input.bind(text=update_total_ligne)
         ajouter_panier_btn.bind(on_press=ajouter_au_panier)
 
-        # Créer un ScrollView et y ajouter le layout principal
-        root_scroll = ScrollView(size_hint=(1, 1))
-        root_scroll.add_widget(popup_content_layout)
-
-        popup = Popup(
-            title='Nouvelle Vente',
-            content=root_scroll,  # Le contenu du popup est maintenant le ScrollView
-            size_hint=(0.9, 0.9),
-            auto_dismiss=False
-        )
-
+        # --- Popup ---
+        popup = Popup(title='Nouvelle Vente', content=ScrollView(size_hint=(1, 1), do_scroll_x=False, do_scroll_y=True, bar_width=dp(10)), size_hint=(0.9, 0.9), auto_dismiss=False)
+        popup.content.add_widget(popup_main_layout)
         annuler_btn.bind(on_press=popup.dismiss)
         valider_btn.bind(on_press=lambda x: self.valider_panier(popup))
-
         popup.open()
 
     def valider_panier(self, popup):
-        """Valider et enregistrer toutes les ventes du panier"""
+        if not self.panier:
+            self.show_message('Erreur', 'Le panier est vide.')
+            return
         try:
-            # Vérifier que le panier n'est pas vide
-            if not self.panier:
-                self.show_message('Erreur', 'Le panier est vide. Ajoutez au moins un produit.')
-                return
-
-            # Obtenir l'utilisateur actuel
             from kivy.app import App
             app = App.get_running_app()
-            if not hasattr(app, 'current_user') or not app.current_user:
-                self.show_message('Erreur', 'Utilisateur non connecté')
-                return
-
             utilisateur_id = app.current_user['id']
-
-            # Enregistrer chaque vente du panier
-            ventes_ids = []
-            for item in self.panier:
-                vente_id = Vente.creer(
-                    item['produit']['id'],
-                    item['quantite'],
-                    item['prix_unitaire'],
-                    utilisateur_id
-                )
-                ventes_ids.append(vente_id)
-
+            ventes_ids = [Vente.creer(item['produit']['id'], item['quantite'], item['prix_unitaire'], utilisateur_id) for item in self.panier]
             popup.dismiss()
-
-            # Proposer d'imprimer le ticket global
             total_panier = sum(item['total'] for item in self.panier)
-            nb_articles = len(self.panier)
-            self.show_message(
-                'Succès',
-                f'Vente enregistrée avec succès!\n{nb_articles} article(s) - Total: {total_panier:.2f}\n\nVoulez-vous imprimer le ticket?',
-                lambda: self.export_ticket_panier(ventes_ids)
-            )
+            self.show_message('Succès', f'Vente enregistrée!\n{len(self.panier)} article(s) - Total: {total_panier:.2f}', lambda: self.export_ticket_panier(ventes_ids))
             self.refresh_list()
-
-        except ValueError as e:
-            self.show_message('Erreur', str(e))
         except Exception as e:
-            self.show_message('Erreur', f'Erreur lors de la vente: {str(e)}')
+            self.show_message('Erreur', f'Erreur lors de la validation: {str(e)}')
 
     def export_ticket(self, vente_id):
-        """Exporter le ticket de vente"""
         try:
             chemin = ExportManager.generer_ticket_vente(vente_id)
             self.show_message('Succès', f'Ticket exporté:\n{chemin}')
@@ -537,7 +350,6 @@ class VentesScreen(Screen):
             self.show_message('Erreur', f'Erreur lors de l\'export: {str(e)}')
 
     def export_ticket_panier(self, ventes_ids):
-        """Exporter un ticket pour plusieurs ventes (panier)"""
         try:
             chemin = ExportManager.generer_ticket_panier(ventes_ids)
             self.show_message('Succès', f'Ticket exporté:\n{chemin}')
@@ -545,27 +357,17 @@ class VentesScreen(Screen):
             self.show_message('Erreur', f'Erreur lors de l\'export: {str(e)}')
 
     def show_message(self, titre, message, callback=None):
-        """Afficher un message"""
         content = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
-        content.add_widget(Label(text=message))
-
-        buttons_layout = BoxLayout(size_hint=(1, None), height=dp(40), spacing=dp(10))
-
-        ok_btn = Button(text='OK')
+        content.add_widget(MDLabel(text=message, adaptive_height=True))
+        buttons_layout = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(10))
+        ok_btn = MDFlatButton(text='OK')
         buttons_layout.add_widget(ok_btn)
-
         if callback:
-            yes_btn = Button(text='Oui', background_color=(0.2, 0.8, 0.4, 1))
+            yes_btn = MDRaisedButton(text='Oui')
             buttons_layout.add_widget(yes_btn)
-
         content.add_widget(buttons_layout)
-
-        popup = Popup(title=titre, content=content, size_hint=(0.8, 0.3))
-
+        popup = Popup(title=titre, content=content, size_hint=(0.8, 0.4), auto_dismiss=False)
+        ok_btn.bind(on_press=popup.dismiss)
         if callback:
-            ok_btn.bind(on_press=popup.dismiss)
             yes_btn.bind(on_press=lambda x: (callback(), popup.dismiss()))
-        else:
-            ok_btn.bind(on_press=popup.dismiss)
-
         popup.open()

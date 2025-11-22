@@ -2,9 +2,10 @@
 Application AGIB - Gestion d'Inventaire pour Boutique
 Point d'entrée principal de l'application
 """
-from kivy.app import App
+from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, NoTransition
 from kivy.core.window import Window
+import os
 
 # Import des écrans
 from ui.login_screen import LoginScreen
@@ -16,8 +17,10 @@ from ui.rapports_screen import RapportsScreen
 from ui.utilisateurs_screen import UtilisateursScreen
 from ui.rapport_vendeur_screen import RapportVendeurScreen
 
+# Chemin vers le dossier de l'application
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-class AGIBApp(App):
+class AGIBApp(MDApp):
     """Application principale AGIB"""
 
     def __init__(self, **kwargs):
@@ -26,8 +29,11 @@ class AGIBApp(App):
 
     def build(self):
         """Construire l'application"""
-        # Configurer la fenêtre avec un fond sombre agréable
-        Window.clearcolor = (0.15, 0.15, 0.18, 1)  # Gris foncé bleuté
+        # Définir le thème de l'application
+        self.theme_cls.theme_style = "Dark"  # "Dark" ou "Light"
+        self.theme_cls.primary_palette = "BlueGray"  # Palette de couleurs
+
+        # Configurer la fenêtre
         Window.size = (800, 600)
 
         # Créer le gestionnaire d'écrans
