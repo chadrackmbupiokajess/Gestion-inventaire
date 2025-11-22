@@ -11,6 +11,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
 from kivy.metrics import dp
+from kivy.core.window import Window
 from models.produit import Produit
 from models.categorie import Categorie
 
@@ -235,6 +236,30 @@ class ProduitsScreen(Screen):
         )
 
         annuler_btn.bind(on_press=popup.dismiss)
+        
+        # --- Logique de navigation clavier ---
+        form_widgets = [nom_input, prix_achat_input, prix_vente_input, quantite_input, date_exp_input]
+
+        def on_key(window, key, *args):
+            if key == 9:  # Tab
+                for i, widget in enumerate(form_widgets):
+                    if widget.focus:
+                        next_widget = form_widgets[(i + 1) % len(form_widgets)]
+                        next_widget.focus = True
+                        return True
+            elif key == 13:  # Enter
+                sauvegarder_btn.dispatch('on_press')
+                return True
+
+        def on_popup_open(instance):
+            Window.bind(on_key_down=on_key)
+
+        def on_popup_dismiss(instance):
+            Window.unbind(on_key_down=on_key)
+
+        popup.bind(on_open=on_popup_open)
+        popup.bind(on_dismiss=on_popup_dismiss)
+
         sauvegarder_btn.bind(on_press=lambda x: self.save_produit(
             popup, produit, nom_input.text,
             prix_achat_input.text, prix_vente_input.text,

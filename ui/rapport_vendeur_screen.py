@@ -3,14 +3,15 @@
 """
 from kivy.uix.screenmanager import Screen
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.textinput import TextInput
 from kivy.metrics import dp
 from utils.export import ExportManager
 from datetime import datetime
-
+import functools
 
 class RapportVendeurScreen(Screen):
     """Écran de rapport journalier simplifié pour les vendeurs"""
@@ -51,7 +52,7 @@ class RapportVendeurScreen(Screen):
         info_layout = BoxLayout(orientation='vertical', spacing=dp(10), size_hint=(1, 0.3))
 
         info_titre = Label(
-            text='Imprimer le rapport des ventes du jour',
+            text='Consulter le rapport des ventes du jour',
             font_size='18sp',
             bold=True,
             color=(0.4, 1, 0.6, 1)
@@ -90,7 +91,7 @@ class RapportVendeurScreen(Screen):
 
         # Bouton
         export_btn = Button(
-            text='🖨️ Imprimer le Rapport du Jour',
+            text='👁️ Voir le Rapport du Jour',
             font_size='20sp',
             bold=True,
             size_hint=(0.8, None),
@@ -99,23 +100,61 @@ class RapportVendeurScreen(Screen):
             background_color=(0.2, 0.8, 0.4, 1),
             color=(1, 1, 1, 1)
         )
-        export_btn.bind(on_press=self.export_rapport_jour)
+        export_btn.bind(on_press=self.preview_rapport_jour)
         export_layout.add_widget(export_btn)
 
         main_layout.add_widget(export_layout)
 
         self.add_widget(main_layout)
 
-    def export_rapport_jour(self, instance):
-        """Exporter le rapport des ventes du jour"""
+    def preview_rapport_jour(self, instance):
+        """Afficher la prévisualisation du rapport des ventes du jour"""
+        self.show_preview_popup(
+            "Prévisualisation des Ventes du Jour",
+            ExportManager.generer_contenu_ventes_journalieres,
+            ExportManager.exporter_ventes_journalieres
+        )
+
+    def show_preview_popup(self, title, content_generator, export_function):
+        """Afficher une fenêtre de prévisualisation pour un rapport"""
         try:
-            chemin = ExportManager.exporter_ventes_journalieres()
-            self.show_message(
-                'Succès',
-                f'Rapport du jour exporté avec succès!\n\nFichier:\n{chemin}'
-            )
+            report_content = content_generator()
+            
+            content = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(10))
+            
+            text_input = TextInput(text=report_content, readonly=True, size_hint=(1, 0.8), background_color=(0.1, 0.1, 0.1, 1), foreground_color=(1, 1, 1, 1))
+            scroll = ScrollView()
+            scroll.add_widget(text_input)
+            content.add_widget(scroll)
+            
+            buttons_layout = BoxLayout(size_hint=(1, None), height=dp(50), spacing=dp(10))
+            
+            retour_btn = Button(text='Retour')
+            buttons_layout.add_widget(retour_btn)
+            
+            exporter_btn = Button(text='Imprimer', background_color=(0.2, 0.8, 0.4, 1))
+            buttons_layout.add_widget(exporter_btn)
+            
+            content.add_widget(buttons_layout)
+            
+            popup = Popup(title=title, content=content, size_hint=(0.9, 0.9))
+            
+            retour_btn.bind(on_press=popup.dismiss)
+            
+            def do_export(*args):
+                try:
+                    chemin = export_function()
+                    popup.dismiss()
+                    self.show_message('Succès', f'Rapport imprimé avec succès!\n\nFichier:\n{chemin}')
+                except Exception as e:
+                    self.show_message('Erreur', f'Erreur lors de l\'impression:\n{str(e)}')
+
+            exporter_btn.bind(on_press=do_export)
+            
+            popup.open()
+
         except Exception as e:
-            self.show_message('Erreur', f'Erreur lors de l\'export:\n{str(e)}')
+            self.show_message('Erreur', f'Erreur lors de la génération du rapport:\n{str(e)}')
 
     def show_message(self, titre, message):
         """Afficher un message"""
