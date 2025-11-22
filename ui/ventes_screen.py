@@ -151,10 +151,16 @@ class VentesScreen(Screen):
     def show_nouvelle_vente_popup(self, instance):
         """Afficher le popup de nouvelle vente avec panier"""
         self.panier = []  # Réinitialiser le panier
-        content = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(5))
+
+        # Layout principal qui contiendra tout le contenu du popup
+        # Il est dimensionné verticalement pour s'adapter à son contenu
+        popup_content_layout = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(5), size_hint_y=None)
+        popup_content_layout.bind(minimum_height=popup_content_layout.setter('height'))
 
         # === SECTION 1: FORMULAIRE DE SAISIE ===
-        form_section = BoxLayout(orientation='vertical', size_hint=(1, None), height=dp(280), spacing=dp(5))
+        # Cette section s'adapte maintenant à la hauteur de son contenu
+        form_section = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(5))
+        form_section.bind(minimum_height=form_section.setter('height'))
 
         # Titre de la section
         form_titre = Label(
@@ -168,7 +174,7 @@ class VentesScreen(Screen):
         form_section.add_widget(form_titre)
 
         # Formulaire d'ajout de produit
-        form = GridLayout(cols=2, spacing=dp(10), size_hint=(1, None), height=dp(200))
+        form = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(200))
 
         # Recherche du produit
         form.add_widget(Label(text='Rechercher produit:', color=(1, 1, 1, 1)))
@@ -235,10 +241,10 @@ class VentesScreen(Screen):
         )
         form_section.add_widget(ajouter_panier_btn)
 
-        content.add_widget(form_section)
+        popup_content_layout.add_widget(form_section)
 
         # Séparateur
-        content.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
+        popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
 
         # === SECTION 2: RÉSULTATS DE RECHERCHE ===
         search_results_label = Label(
@@ -248,7 +254,7 @@ class VentesScreen(Screen):
             color=(0.9, 0.9, 0.9, 1),
             font_size='14sp'
         )
-        content.add_widget(search_results_label)
+        popup_content_layout.add_widget(search_results_label)
 
         # ScrollView pour les résultats
         self.search_results_layout = GridLayout(cols=1, spacing=dp(2), size_hint_y=None)
@@ -256,10 +262,10 @@ class VentesScreen(Screen):
 
         search_scroll = ScrollView(size_hint=(1, None), height=dp(120))
         search_scroll.add_widget(self.search_results_layout)
-        content.add_widget(search_scroll)
+        popup_content_layout.add_widget(search_scroll)
 
         # Séparateur
-        content.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
+        popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
 
         # === SECTION 3: PANIER ===
         panier_label = Label(
@@ -270,7 +276,7 @@ class VentesScreen(Screen):
             font_size='16sp',
             bold=True
         )
-        content.add_widget(panier_label)
+        popup_content_layout.add_widget(panier_label)
 
         # ScrollView pour le panier
         self.panier_layout = GridLayout(cols=1, spacing=dp(2), size_hint_y=None)
@@ -278,7 +284,7 @@ class VentesScreen(Screen):
 
         panier_scroll = ScrollView(size_hint=(1, None), height=dp(120))
         panier_scroll.add_widget(self.panier_layout)
-        content.add_widget(panier_scroll)
+        popup_content_layout.add_widget(panier_scroll)
 
         # Total du panier
         total_panier_layout = BoxLayout(size_hint=(1, None), height=dp(35), spacing=dp(10))
@@ -295,7 +301,7 @@ class VentesScreen(Screen):
             color=(0.4, 1, 0.6, 1)
         )
         total_panier_layout.add_widget(self.total_panier_label)
-        content.add_widget(total_panier_layout)
+        popup_content_layout.add_widget(total_panier_layout)
 
         # Variable pour stocker le produit sélectionné
         self.selected_produit = None
@@ -454,13 +460,16 @@ class VentesScreen(Screen):
         valider_btn = Button(text='✓ Valider la vente', background_color=(0.2, 0.8, 0.4, 1), color=(1, 1, 1, 1), font_size='16sp', bold=True)
         buttons_layout.add_widget(valider_btn)
 
-        content.add_widget(buttons_layout)
+        popup_content_layout.add_widget(buttons_layout)
+
+        # Créer un ScrollView et y ajouter le layout principal
+        root_scroll = ScrollView(size_hint=(1, 1))
+        root_scroll.add_widget(popup_content_layout)
 
         popup = Popup(
             title='Nouvelle Vente - Panier',
-            content=content,
-            size_hint=(0.9, 0.85),
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+            content=root_scroll,  # Le contenu du popup est maintenant le ScrollView
+            size_hint=(0.9, 0.9),
             auto_dismiss=False
         )
 
