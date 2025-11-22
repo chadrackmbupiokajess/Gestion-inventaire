@@ -1,0 +1,99 @@
+CAHIER DES CHARGES - APPLICATION DE GESTION D'INVENTAIRE POUR BOUTIQUE (AGIB)
+Technologies demandées : Python (Kivy) - Base de données : SQLite - Export : fichiers .txt
+
+1. Présentation générale
+1.1 Contexte
+La boutique gère son stock de manière manuelle. L'application vise à automatiser le suivi des produits, ventes et achats, tout en permettant l'export et la génération de rapports en format .txt (fichier texte lisible sur tout ordinateur).
+
+1.2 Objectifs
+- Suivi en temps réel des produits et des quantités.
+- Gestion des ventes et des achats.
+- Export des rapports et inventaires au format .txt.
+- Interface simple et tactile (Kivy) pour un usage sur tablette/PC.
+- Sauvegarde locale via SQLite et possibilité d'export .txt pour archivage.
+
+2. Fonctions principales
+2.1 Gestion des produits
+- Ajouter/modifier/supprimer produit : nom, code, prix_achat, prix_vente, quantité, catégorie, date_expiration.
+- Recherche par nom ou code.
+- Import/export simple (.txt) des listes produits.
+
+2.2 Gestion des catégories
+- Créer, modifier, supprimer catégories.
+- Lier produits à une catégorie.
+
+2.3 Gestion des achats (entrées)
+- Enregistrer achats avec quantités et fournisseur.
+- Mise à jour automatique du stock.
+
+2.4 Gestion des ventes (sorties)
+- Enregistrer chaque vente (produit, quantité, prix unitaire, total).
+- Mise à jour automatique du stock.
+- Impression/affichage d'un reçu simple et export du ticket en .txt.
+
+2.5 Utilisateurs et sécurité
+- Deux rôles : Administrateur (propriétaire) et Vendeur.
+- Authentification simple (identifiant/mot de passe).
+- Journalisation des opérations dans la base SQLite et possibilité d'export .txt du journal.
+
+2.6 Rapports & Export
+- Rapports : ventes journalières, inventaire complet, produits en rupture.
+- Export des rapports et inventaire en fichiers .txt (encodage UTF-8).
+- Option "Générer fichier .txt" pour l'inventaire à une date donnée.
+
+3. Contraintes techniques
+- Langage : Python 3.x avec Kivy pour l'interface.
+- Base de données : SQLite (fichier local .db).
+- Plateforme cible : Windows et Android (Kivy permet déploiement multi-plateforme).
+- Fichiers exports : .txt lisibles (UTF-8).
+- Sauvegarde : export manuel de la DB et export quotidien automatique en .txt (option).
+
+4. Architecture et schéma DB (extrait)
+Tables principales :
+- produits(id INTEGER PRIMARY KEY, nom TEXT, code TEXT UNIQUE, prix_achat REAL, prix_vente REAL, quantite INTEGER, categorie_id INTEGER, date_expiration TEXT)
+- categories(id INTEGER PRIMARY KEY, nom TEXT)
+- achats(id INTEGER PRIMARY KEY, produit_id INTEGER, quantite INTEGER, date TEXT, fournisseur TEXT)
+- ventes(id INTEGER PRIMARY KEY, produit_id INTEGER, quantite INTEGER, date TEXT, utilisateur_id INTEGER, montant_total REAL)
+- utilisateurs(id INTEGER PRIMARY KEY, nom TEXT, role TEXT, mot_de_passe TEXT)
+- journal(id INTEGER PRIMARY KEY, action TEXT, date TEXT, utilisateur_id INTEGER, details TEXT)
+
+5. Interactions Kivy (UI)
+- Écran de connexion
+- Tableau de bord : résumé du stock et alertes (stock faible)
+- Écran produits : liste, recherche, ajout/modification
+- Écran ventes : sélection produit, saisie quantité, finaliser vente, export ticket .txt
+- Écran achats : saisie livraison, mise à jour stock
+- Écran rapports : choisir période, générer et exporter .txt
+
+6. Export .txt - spécification
+- Format simple lisible (UTF-8), séparateur par tabulation ou point-virgule.
+- Nommage fichier : INVENTAIRE_YYYYMMDD_HHMMSS.txt ou VENTES_YYYYMMDD.txt
+- Contenu : Entête avec date et boutique, puis lignes produit avec champs séparés.
+- Exemple ligne produit (tab séparateur) : CODE	NOM	QTE	PRIX_VENTE	PRIX_ACHAT	CATEGORIE	DATE_EXP
+
+7. Performance & sécurité
+- Capable de gérer quelques milliers de produits sans latence.
+- Verrouillage de la DB lors d'écritures pour éviter corruption.
+- Sauvegarde régulière par export .txt.
+- Mots de passe stockés hachés en DB (ex. bcrypt).
+
+8. Livrables
+- Cahier des charges (texte)
+- Schéma de la base SQLite (.sql)
+- Application Python/Kivy (code source)
+- Fichier DB SQLite d'exemple
+- Manuel d'utilisation + procédure d'export .txt
+- Tests unitaires sur fonctions critiques
+
+9. Planning (exemple)
+- Conception : 1 semaine
+- Développement (UI + DB) : 3-4 semaines
+- Tests : 1-2 semaines
+- Déploiement et formation : 1 semaine
+
+10. Estimation budgétaire (approx.)
+- Développement : 300-500 USD
+- Tests & déploiement : 100 USD
+- Total estimé : ~400-600 USD
+
+--- FIN DU CAHIER DES CHARGES ---
