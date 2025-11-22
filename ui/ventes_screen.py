@@ -153,25 +153,39 @@ class VentesScreen(Screen):
         self.panier = []  # Réinitialiser le panier
 
         # Layout principal qui contiendra tout le contenu du popup
-        # Il est dimensionné verticalement pour s'adapter à son contenu
         popup_content_layout = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(5), size_hint_y=None)
         popup_content_layout.bind(minimum_height=popup_content_layout.setter('height'))
 
         # === SECTION 1: FORMULAIRE DE SAISIE ===
-        # Cette section s'adapte maintenant à la hauteur de son contenu
         form_section = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(5))
         form_section.bind(minimum_height=form_section.setter('height'))
 
-        # Titre de la section
+        # Barre de titre avec compteur de panier
+        titre_bar = BoxLayout(size_hint=(1, None), height=dp(30))
+        
         form_titre = Label(
             text='📝 Ajouter un produit',
-            size_hint=(1, None),
-            height=dp(30),
+            size_hint=(0.6, 1),
             font_size='16sp',
             bold=True,
-            color=(0.4, 0.8, 1, 1)
+            color=(0.4, 0.8, 1, 1),
+            halign='left'
         )
-        form_section.add_widget(form_titre)
+        form_titre.bind(size=form_titre.setter('text_size'))
+        titre_bar.add_widget(form_titre)
+
+        panier_label = Label(
+            text='🛒 Panier (0 articles)',
+            size_hint=(0.4, 1),
+            font_size='16sp',
+            bold=True,
+            color=(0.4, 1, 0.6, 1),
+            halign='right'
+        )
+        panier_label.bind(size=panier_label.setter('text_size'))
+        titre_bar.add_widget(panier_label)
+        
+        form_section.add_widget(titre_bar)
 
         # Formulaire d'ajout de produit
         form = GridLayout(cols=2, spacing=dp(10), size_hint_y=None, height=dp(200))
@@ -268,17 +282,7 @@ class VentesScreen(Screen):
         popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
 
         # === SECTION 3: PANIER ===
-        panier_label = Label(
-            text='🛒 Panier (0 articles):',
-            size_hint=(1, None),
-            height=dp(25),
-            color=(0.4, 1, 0.6, 1),
-            font_size='16sp',
-            bold=True
-        )
-        popup_content_layout.add_widget(panier_label)
-
-        # ScrollView pour le panier
+        # Le titre du panier est maintenant en haut, on peut garder cette section pour la liste
         self.panier_layout = GridLayout(cols=1, spacing=dp(2), size_hint_y=None)
         self.panier_layout.bind(minimum_height=self.panier_layout.setter('height'))
 
@@ -407,7 +411,7 @@ class VentesScreen(Screen):
         def update_panier_display():
             """Mettre à jour l'affichage du panier"""
             self.panier_layout.clear_widgets()
-            panier_label.text = f'🛒 Panier ({len(self.panier)} articles):'
+            panier_label.text = f'🛒 Panier ({len(self.panier)} articles)'
 
             total_panier = 0
             for idx, item in enumerate(self.panier):
@@ -467,7 +471,7 @@ class VentesScreen(Screen):
         root_scroll.add_widget(popup_content_layout)
 
         popup = Popup(
-            title='Nouvelle Vente - Panier',
+            title='Nouvelle Vente',
             content=root_scroll,  # Le contenu du popup est maintenant le ScrollView
             size_hint=(0.9, 0.9),
             auto_dismiss=False
