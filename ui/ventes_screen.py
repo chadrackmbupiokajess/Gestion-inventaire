@@ -156,6 +156,27 @@ class VentesScreen(Screen):
         popup_content_layout = BoxLayout(orientation='vertical', padding=dp(10), spacing=dp(5), size_hint_y=None)
         popup_content_layout.bind(minimum_height=popup_content_layout.setter('height'))
 
+        # Total du panier en haut
+        total_panier_layout = BoxLayout(size_hint=(1, None), height=dp(35), spacing=dp(10))
+        total_panier_layout.add_widget(Label(
+            text='TOTAL PANIER:',
+            font_size='18sp',
+            bold=True,
+            color=(1, 1, 1, 1)
+        ))
+        self.total_panier_label = Label(
+            text='0.00',
+            font_size='20sp',
+            bold=True,
+            color=(0.4, 1, 0.6, 1)
+        )
+        total_panier_layout.add_widget(self.total_panier_label)
+        popup_content_layout.add_widget(total_panier_layout)
+
+        # Séparateur
+        popup_content_layout.add_widget(Label(text='─' * 50, size_hint=(1, None), height=dp(20), color=(0.5, 0.5, 0.5, 1)))
+
+
         # === SECTION 1: FORMULAIRE DE SAISIE ===
         form_section = BoxLayout(orientation='vertical', size_hint_y=None, spacing=dp(5))
         form_section.bind(minimum_height=form_section.setter('height'))
@@ -289,23 +310,6 @@ class VentesScreen(Screen):
         panier_scroll = ScrollView(size_hint=(1, None), height=dp(120))
         panier_scroll.add_widget(self.panier_layout)
         popup_content_layout.add_widget(panier_scroll)
-
-        # Total du panier
-        total_panier_layout = BoxLayout(size_hint=(1, None), height=dp(35), spacing=dp(10))
-        total_panier_layout.add_widget(Label(
-            text='TOTAL PANIER:',
-            font_size='18sp',
-            bold=True,
-            color=(1, 1, 1, 1)
-        ))
-        self.total_panier_label = Label(
-            text='0.00',
-            font_size='20sp',
-            bold=True,
-            color=(0.4, 1, 0.6, 1)
-        )
-        total_panier_layout.add_widget(self.total_panier_label)
-        popup_content_layout.add_widget(total_panier_layout)
 
         # Variable pour stocker le produit sélectionné
         self.selected_produit = None
